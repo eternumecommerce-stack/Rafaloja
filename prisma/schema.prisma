@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ───────────────────────── Catálogo ─────────────────────────
+
+enum ProductKind {
+  MAIN // produto principal da página (GrillDaddy)
+  BUNDLE // kit (Whole Grill Care Bundle)
+  ADDON // upsell no formulário do produto (termômetro)
+  UPSELL // upsells do carrinho (cabeças extras, pano)
+  WARRANTY // garantia vitalícia no carrinho
+}
+
+enum MediaType {
+  IMAGE
+  VIDEO
+}
+
+enum MediaPlacement {
+  GALLERY // galeria principal do produto
+  UGC // vídeos "Trusted by 5,000+ people!"
+  THUMBNAIL // miniatura usada no carrinho / upsells
+}
+
+model Product {
+  id             String      @id @default(cuid())
+  handle         String      @unique
+  kind           ProductKind @default(MAIN)
+  title          String
+  subtitle       String?
+  price          Decimal     @db.Decimal(10, 2)
+  compareAtPrice Decimal?    @db.Decimal(10, 2)
+  ratingLabel    String?
+  image          String? // foto usada no carrinho / checkout
+  colors         String[]    @default([]) // variações de cor ("Grey", "White"...)
+  sizes          String[]    @default([]) // variações de tamanho ("6", "6.5"...)
+  collection     String? // coleção da home ("orthopedic", "trainers")
+  active         Boolean     @default(true)
+  position       Int         @default(0)
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  offers       ProductOffer[]
+  media        ProductMedia[]
+  features     ProductFeature[]
+  accordions   ProductAccordion[]
+  blocks       ContentBlock[]
+  bundleItems  BundleItem[]
+  faqs         Faq[]
+  testimonials Testimonial[]
+  reviews      Review[]
+  orderItems   OrderItem[]
+
+  @@index([kind, active, position])
+  @@index([collection, active, position])
+}
+
+/// Ofertas por quantidade ("Buy More, Save More"): 1x, 2x... com brindes
+model ProductOffer {
+  id             String   @id @default(cuid())
+  productId      String
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quantity       Int
+  title          String // "2x BBQ Brush"
+  caption        String   @default("FREE SHIPPING INCLUDED")
+  price          Decimal  @db.Decimal(10, 2) // preço total da oferta
+  compareAtPrice Decimal? @db.Decimal(10, 2)
+  badge          String? // "Buy 1, Get 1 50% OFF"
+  gifts          String[] // brindes listados em cada linha
+  giftValue      Decimal? @db.Decimal(10, 2) // valor "de" do brinde (aparece riscado + FREE)
+  isDefault      Boolean  @default(false)
+  active         Boolean  @default(true)
+  position       Int      @default(0)
+
+  @@index([productId, active, position])
+}
+
+model ProductMedia {
+  id        String         @id @default(cuid())
+  productId String
+  product   Product        @relation(fields: [productId], references: [id], onDelete: Cascade)
+  type      MediaType      @default(IMAGE)
+  placement MediaPlacement @default(GALLERY)
+  url       String? // vazio = placeholder cinza
+  poster    String? // capa do vídeo
+  alt       String?
+  position  Int            @default(0)
+
+  @@index([productId, placement, position])
+}
+
+/// Ícone + texto logo abaixo da avaliação ("No More Scrubbing By Hand"...)
+model ProductFeature {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  icon      String // nome do Material Symbol
+  text      String
+  position  Int     @default(0)
+
+  @@index([productId, position])
+}
+
+/// Accordions do produto (Key Benefits, How it Works?, ...)
+model ProductAccordion {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  title     String
+  bodyHtml  String
+  position  Int     @default(0)
+
+  @@index([productId, position])
+}
+
+/// Seções "image with text" abaixo do bundle
+model ContentBlock {
+  id          String    @id @default(cuid())
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  heading     String
+  bodyHtml    String
+  mediaType   MediaType @default(IMAGE)
+  mediaUrl    String?
+  mediaPoster String?
+  mediaRatio  String? // ex.: "727 / 572" (proporção da mídia)
+  italic      Boolean   @default(false)
+  position    Int       @default(0)
+
+  @@index([productId, position])
+}
+
+/// Itens listados no kit (o produto é o BUNDLE)
+model BundleItem {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  icon      String
+  text      String
+  position  Int     @default(0)
+
+  @@index([productId, position])
+}
+
+model Faq {
+  id         String  @id @default(cuid())
+  productId  String
+  product    Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  question   String
+  answerHtml String
+  position   Int     @default(0)
+
+  @@index([productId, position])
+}
+
+// ───────────────────────── Prova social ─────────────────────────
+
+/// Cards "What Our Customers Say about Us"
+model Testimonial {
+  id        String  @id @default(cuid())
+  productId String
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  quote     String
+  author    String
+  location  String?
+  rating    Int     @default(5)
+  avatarUrl String?
+  position  Int     @default(0)
+
+  @@index([productId, position])
+}
+
+/// Carrossel "Real Results. Real Customers"
+model Review {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  author    String
+  body      String
+  rating    Int      @default(5)
+  photoUrl  String?
+  verified  Boolean  @default(true)
+  published Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  @@index([productId, published, createdAt])
+}
+
+// ───────────────────────── Loja ─────────────────────────
+
+model Announcement {
+  id       String  @id @default(cuid())
+  text     String
+  active   Boolean @default(true)
+  position Int     @default(0)
+}
+
+enum OrderStatus {
+  PENDING
+  PAID
+  FULFILLED // separado/embalado
+  SHIPPED
+  DELIVERED
+  CANCELLED
+  REFUNDED
+}
+
+model Order {
+  id                    String      @id @default(cuid())
+  userId                String?
+  user                  User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  number                Int         @unique @default(autoincrement())
+  email                 String?
+  status                OrderStatus @default(PENDING)
+  stripePaymentIntentId String?     @unique
+  customerName          String?
+  shippingAddress       Json?
+  trackingNumber        String?
+  trackingCarrier       String?
+  shippedAt             DateTime?
+  deliveredAt           DateTime?
+  notes                 String? // notas internas (só o admin vê)
+  currency              String      @default("USD")
+  subtotal              Decimal     @db.Decimal(10, 2)
+  createdAt             DateTime    @default(now())
+  updatedAt             DateTime    @updatedAt
+
+  items  OrderItem[]
+  events OrderEvent[]
+
+  @@index([status, createdAt])
+}
+
+model OrderItem {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId String?
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+  title     String // snapshot do título no momento da compra
+  image     String? // snapshot da foto no momento da compra
+  unitPrice Decimal  @db.Decimal(10, 2)
+  quantity  Int
+
+  @@index([orderId])
+}
+
+/// Inscritos da newsletter (home "Subscribe to our emails" e checkbox do checkout)
+model NewsletterSubscriber {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  source    String   @default("home") // home | checkout
+  createdAt DateTime @default(now())
+}
+
+enum ContactStatus {
+  NEW
+  READ
+  ANSWERED
+}
+
+/// Mensagens do formulário "Get in touch" (/pages/contact)
+model ContactMessage {
+  id        String        @id @default(cuid())
+  name      String?
+  email     String
+  phone     String?
+  message   String
+  status    ContactStatus @default(NEW)
+  createdAt DateTime      @default(now())
+
+  @@index([status, createdAt])
+}
+
+// ───────────────────────── Contas de cliente (Better Auth) ─────────────────────────
+
+model User {
+  id            String    @id
+  name          String
+  email         String    @unique
+  emailVerified Boolean   @default(false)
+  image         String?
+  phone         String? // telefone de contato (do último checkout)
+  address       Json? // endereço de entrega salvo (do último checkout)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  sessions      Session[]
+  accounts      Account[]
+  orders        Order[]
+
+  @@map("user")
+}
+
+model Session {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("session")
+}
+
+/// Login por provedor (google) ou senha (providerId = "credential")
+model Account {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@index([userId])
+  @@map("account")
+}
+
+model Verification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+  @@map("verification")
+}
+
+/// Histórico do pedido (mudança de status, rastreio, reembolso, notas) para o painel /admin
+model OrderEvent {
+  id        String   @id @default(cuid())
+  orderId   String
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  type      String // status | tracking | refund | note
+  message   String
+  actor     String? // email do admin que fez a ação
+  createdAt DateTime @default(now())
+
+  @@index([orderId, createdAt])
+}
