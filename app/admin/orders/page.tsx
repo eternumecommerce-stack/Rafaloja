@@ -59,8 +59,8 @@ async function AdminOrdersPageContent({
     };
   });
 
-  // Link do pagamento no painel do Stripe (modo teste ou produção, conforme a chave)
-  const stripeDashboard = process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_")
+  // Link do pagamento no painel do Stripe (modo teste ou produção, conforme a chave secreta ou restrita)
+  const stripeDashboard = /^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "")
     ? "https://dashboard.stripe.com/payments/"
     : "https://dashboard.stripe.com/test/payments/";
 
