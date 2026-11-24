@@ -52,7 +52,7 @@ export function CheckoutColumns({
 export function PolicyLinks() {
   return (
     <ul className="mt-6 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-[#dedede] pt-4 text-xs text-[#1773b0]">
-      {["Refund policy", "Shipping policy", "Privacy policy", "Terms of service"].map((l) => (
+      {[].map((l) => (
         <li key={l}>
           <a href="#" className="underline underline-offset-2">
             {l}

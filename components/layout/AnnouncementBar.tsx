@@ -6,11 +6,11 @@ export default function AnnouncementBar({ announcements }: { announcements: stri
   return (
     <div className="overflow-hidden bg-brand text-white" role="region" aria-label="Announcement">
       <p className="sr-only">{announcements.join(" · ")}</p>
-      <div className="animate-ticker flex w-max py-[15px]" aria-hidden="true">
+      <div className="animate-ticker flex w-max " aria-hidden="true">
         {[0, 1].map((copy) => (
           <ul key={copy} className="flex shrink-0">
             {row.map((text, i) => (
-              <li key={i} className="whitespace-nowrap px-6 text-[12px] font-medium uppercase leading-[22px] tracking-[0.6px] md:px-[30px]">
+              <li key={i} className="whitespace-nowrap px-6 text-[8px] md:text-[12px] font-medium uppercase leading-[22px] tracking-[0.6px] md:px-[30px] md:py-[10px]">
                 {text}
               </li>
             ))}

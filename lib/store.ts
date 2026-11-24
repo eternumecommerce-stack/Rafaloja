@@ -67,7 +67,7 @@ export const variantLabels = { color: "Color", size: "Shoe size" };
 
 /** Carrinho: frete grátis a partir deste valor (barra de progresso no topo do carrinho) */
 export const freeShippingThreshold = 49.99;
-export const shippingNote = "🇺🇸 Free Shipping to United States";
+export const shippingNote = "🇺🇸 Free Shipping Across the U.S.";
 
 /** Dias úteis até o envio (selo "Ships by ...") */
 export const shipsInBusinessDays = 2;
