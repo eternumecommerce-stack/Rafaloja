@@ -12,6 +12,9 @@ export const metadata: Metadata = {
 
 export default async function HomePage() {
   const grids = await getCollections(collections.map((c) => c.handle));
+  // O Skyline Max aparece de novo na versão White, fechando a última linha dos ortopédicos
+  const skyline = grids.orthopedic?.find((p) => p.handle === "skyline-max-triple-waterproof");
+  const skylineWhite = skyline && { ...skyline, image: "/midia/produtos/skyline-max-triple-waterproof/07-white.webp", color: "White" };
 
   return (
     <>
@@ -28,7 +31,14 @@ export default async function HomePage() {
       </section>
 
       {collections.map((c) => (
-        <FeaturedCollection key={c.handle} id={c.handle} title={c.title} scheme={c.scheme} products={grids[c.handle] ?? []} />
+        <FeaturedCollection
+          key={c.handle}
+          id={c.handle}
+          title={c.title}
+          scheme={c.scheme}
+          products={grids[c.handle] ?? []}
+          mobileFiller={c.handle === "orthopedic" ? skylineWhite : undefined}
+        />
       ))}
 
       <Newsletter />

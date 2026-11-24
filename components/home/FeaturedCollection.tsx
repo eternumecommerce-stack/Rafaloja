@@ -3,11 +3,14 @@ import Media from "@/components/Media";
 import type { CollectionCard } from "@/lib/data";
 import { formatMoney } from "@/lib/product";
 
-function ProductCard({ p }: { p: CollectionCard }) {
+/** `color`: abre a página do produto já com essa cor escolhida */
+type Card = CollectionCard & { color?: string };
+
+function ProductCard({ p, className }: { p: Card; className?: string }) {
   const onSale = p.compareAt !== undefined && p.compareAt > p.price;
   return (
-    <li>
-      <Link href={`/products/${p.handle}`} className="group block h-full bg-white">
+    <li className={className}>
+      <Link href={`/products/${p.handle}${p.color ? `?color=${encodeURIComponent(p.color)}` : ""}`} className="group block h-full bg-white">
         <div className="relative overflow-hidden">
           <Media
             src={p.image}
@@ -48,12 +51,15 @@ export default function FeaturedCollection({
   title,
   products,
   scheme = "light",
+  mobileFiller,
 }: {
   id: string;
   title: string;
   products: CollectionCard[];
   /** "blue" = faixa azul-clara com título branco */
   scheme?: "light" | "blue";
+  /** Produto extra que preenche o espaço vazio na última linha da grade (mobile e desktop) */
+  mobileFiller?: Card;
 }) {
   if (products.length === 0) return null;
   return (
@@ -64,6 +70,14 @@ export default function FeaturedCollection({
           {products.map((p) => (
             <ProductCard key={p.handle} p={p} />
           ))}
+          {/* Só aparece onde há buraco na última linha: 2 colunas no mobile, 4 no desktop */}
+          {mobileFiller && products.length % 4 !== 0 && (
+            <ProductCard
+              key={`filler-${mobileFiller.handle}`}
+              p={mobileFiller}
+              className={products.length % 2 === 1 ? undefined : "hidden md:block"}
+            />
+          )}
         </ul>
       </div>
     </section>

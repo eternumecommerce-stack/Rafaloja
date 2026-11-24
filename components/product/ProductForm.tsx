@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/components/cart/CartContext";
 import Media from "@/components/Media";
 import type { ProductPageData } from "@/lib/data";
@@ -68,6 +69,18 @@ export default function ProductForm({ product, offers }: { product: Product; off
     const url = product.colorImages[c];
     if (url) window.dispatchEvent(new CustomEvent(GALLERY_SHOW_EVENT, { detail: url }));
   };
+
+  // Link com ?color=White (ex.: card branco da home) abre o produto nessa cor; sem ?color, volta para
+  // a 1ª cor. Reage à troca de link: o Next reaproveita a página (e o estado) entre /produto e /produto?color=
+  const wantedColor = useSearchParams().get("color")?.toLowerCase() ?? null;
+  useEffect(() => {
+    const target = product.colors.find((c) => c.toLowerCase() === wantedColor) ?? product.colors[0];
+    if (!target || (!wantedColor && main.color === target)) return;
+    // Depois da 1ª pintura: a galeria já está montada e escutando o evento de troca de foto
+    const id = requestAnimationFrame(() => chooseColor(target));
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [wantedColor, product.id]);
 
   const addToCart = () => {
     const incomplete = unitPicks.some((p) => (hasColors && !p.color) || (hasSizes && !p.size));
