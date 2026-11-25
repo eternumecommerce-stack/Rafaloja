@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Lora, Plus_Jakarta_Sans } from "next/font/google";
+import { Suspense } from "react";
 import "./globals.css";
 import { CartProvider } from "@/components/cart/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
@@ -45,7 +46,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <CartDrawer />
         </CartProvider>
-        <MetaPixel />
+        {/* Suspense: usePathname só existe no request; sem ele o prerender das rotas dinâmicas falha */}
+        <Suspense fallback={null}>
+          <MetaPixel />
+        </Suspense>
       </body>
     </html>
   );
