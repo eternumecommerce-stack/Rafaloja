@@ -3,6 +3,7 @@ import { Lora, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { CartProvider } from "@/components/cart/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
+import MetaPixel from "@/components/MetaPixel";
 import { brand } from "@/lib/store";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -44,6 +45,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           {children}
           <CartDrawer />
         </CartProvider>
+        <MetaPixel />
       </body>
     </html>
   );

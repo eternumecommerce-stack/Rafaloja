@@ -6,6 +6,7 @@ import ClearCart from "@/components/checkout/ClearCart";
 import { CheckoutColumns, PolicyLinks } from "@/components/checkout/CheckoutShell";
 import OrderAccountBox from "@/components/checkout/OrderAccountBox";
 import OrderSummary from "@/components/checkout/OrderSummary";
+import PixelPurchase from "@/components/checkout/PixelPurchase";
 import { getSession } from "@/lib/auth";
 import { linkOrderToUser } from "@/lib/orders";
 import { markOrderPaid } from "@/lib/checkout";
@@ -102,6 +103,14 @@ async function Confirmation({ searchParams }: Pick<PageProps<"/checkout/success"
   return (
     <>
       <ClearCart />
+      {pi.status === "succeeded" && (
+        <PixelPurchase
+          orderId={order.id}
+          value={total}
+          contentIds={order.items.map((i) => i.productId ?? i.id)}
+          numItems={order.items.reduce((n, i) => n + i.quantity, 0)}
+        />
+      )}
       <CheckoutColumns
         main={
           <div>

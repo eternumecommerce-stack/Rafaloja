@@ -7,6 +7,7 @@ import Media from "@/components/Media";
 import type { ProductPageData } from "@/lib/data";
 import { formatMoney, pickLabel, variantLabel, withVariant, type CartProduct, type VariantPick } from "@/lib/product";
 import { variantLabels } from "@/lib/store";
+import { trackPixel } from "@/lib/meta-pixel";
 import BundlePicker from "./BundlePicker";
 import { GALLERY_SHOW_EVENT } from "./ProductGallery";
 import ShipBadge from "./ShipBadge";
@@ -82,6 +83,17 @@ export default function ProductForm({ product, offers }: { product: Product; off
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [wantedColor, product.id]);
 
+  // Meta Pixel: visita à página do produto
+  useEffect(() => {
+    trackPixel("ViewContent", {
+      content_ids: [product.id],
+      content_name: product.title,
+      content_type: "product",
+      value: product.price,
+      currency: "USD",
+    });
+  }, [product.id, product.title, product.price]);
+
   const addToCart = () => {
     const incomplete = unitPicks.some((p) => (hasColors && !p.color) || (hasSizes && !p.size));
     if (incomplete) {
@@ -128,6 +140,14 @@ export default function ProductForm({ product, offers }: { product: Product; off
           compareAt: product.compareAt,
           image,
         };
+    trackPixel("AddToCart", {
+      content_ids: [product.id],
+      content_name: product.title,
+      content_type: "product",
+      value: item.price,
+      currency: "USD",
+      num_items: units,
+    });
     add(item);
   };
 

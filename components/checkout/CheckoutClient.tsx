@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe, type StripeElementsOptions } from "@stripe/stripe-js";
 import { quoteCart, type QuotedLine } from "@/app/checkout/actions";
@@ -13,6 +13,7 @@ import OrderSummary, { MobileOrderSummary, type SummaryLine } from "./OrderSumma
 import { cartRows } from "@/lib/cart-bundles";
 import { giftImages } from "@/lib/store";
 import { CheckoutColumns } from "./CheckoutShell";
+import { trackPixel } from "@/lib/meta-pixel";
 
 // Sem a chave pública (ainda não configurada) o Stripe não é carregado: o resto do checkout continua abrindo
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -93,6 +94,20 @@ export default function CheckoutClient() {
       : { key: r.key, title: r.title, subtitle: r.subtitle, image: r.image, price: r.unitPrice, qty: r.qty },
   );
   const amount = Math.round(total * 100);
+
+  // Meta Pixel: entrou no checkout com itens (uma vez por visita à página)
+  const checkoutTracked = useRef(false);
+  useEffect(() => {
+    if (!ready || lines.length === 0 || checkoutTracked.current) return;
+    checkoutTracked.current = true;
+    trackPixel("InitiateCheckout", {
+      content_ids: lines.map((l) => l.id),
+      content_type: "product",
+      num_items: lines.reduce((n, l) => n + l.qty, 0),
+      value: total,
+      currency: "USD",
+    });
+  }, [ready, lines, total]);
 
   const options = useMemo<StripeElementsOptions>(
     () => ({
