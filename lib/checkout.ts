@@ -3,6 +3,8 @@ import type Stripe from "stripe";
 import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma/client";
 import { splitVariant } from "@/lib/product";
+import { after } from "next/server";
+import { sendOrderToUtmify } from "@/lib/utmify";
 import { DEMO, demoCartRows } from "@/lib/demo";
 
 export type CheckoutItemInput = { id: string; qty: number };
@@ -128,9 +130,11 @@ export async function markOrderPaid(pi: Stripe.PaymentIntent) {
   const orderId = pi.metadata?.orderId;
   if (!orderId) return null;
 
-  await db.order.updateMany({
+  const changed = await db.order.updateMany({
     where: { id: orderId, stripePaymentIntentId: pi.id, status: "PENDING" },
-    data: { status: "PAID" },
+    data: { status: "PAID", paidAt: new Date() },
   });
+  // UTMify: só na primeira confirmação (webhook e página de sucesso podem chegar os dois)
+  if (changed.count === 1) after(() => sendOrderToUtmify(orderId, "paid"));
   return db.order.findUnique({ where: { id: orderId }, include: { items: true } });
 }

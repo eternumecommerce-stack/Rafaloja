@@ -4,7 +4,10 @@ import { getSession } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { priceCart, type CheckoutItemInput } from "@/lib/checkout";
 import { stripe } from "@/lib/stripe";
-import { rateLimit, TOO_MANY } from "@/lib/rate-limit";
+import { clientIp, rateLimit, TOO_MANY } from "@/lib/rate-limit";
+import { after } from "next/server";
+import { sanitizeTracking } from "@/lib/tracking";
+import { sendOrderToUtmify } from "@/lib/utmify";
 import { subscribeToNewsletter } from "@/app/actions/newsletter";
 import { linkOrderToUser } from "@/lib/orders";
 import { brand } from "@/lib/store";
@@ -58,6 +61,8 @@ export async function createPaymentIntent(input: {
   email: string;
   shipping: ShippingInput;
   newsletter?: boolean;
+  /** UTMs guardadas no navegador (lib/tracking.ts): vão para a UTMify junto com o pedido */
+  tracking?: unknown;
 }): Promise<Result> {
   if (!(await rateLimit("payment-intent", 10, 10 * 60_000))) return { error: TOO_MANY };
   const email = String(input.email ?? "").trim().toLowerCase();
@@ -95,6 +100,7 @@ export async function createPaymentIntent(input: {
         email,
         customerName: shipping.name,
         shippingAddress: { ...shipping.address, phone: shipping.phone ?? null },
+        tracking: { ...sanitizeTracking(input.tracking), ip: await clientIp() },
         subtotal: priced.subtotal,
         items: {
           create: priced.lines.map(({ productId, title, variant, image, unitPrice, quantity }) => ({
@@ -128,6 +134,8 @@ export async function createPaymentIntent(input: {
       where: { id: order.id },
       data: { stripePaymentIntentId: pi.id },
     });
+    // UTMify: pedido criado, aguardando pagamento (roda depois da resposta, não atrasa o checkout)
+    after(() => sendOrderToUtmify(order.id, "waiting_payment"));
     if (input.newsletter) await subscribeToNewsletter(email, "checkout");
     // Logado: guarda telefone e endereço na conta para o próximo checkout
     if (session) await linkOrderToUser(order, session.user.id).catch(() => {});

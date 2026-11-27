@@ -226,6 +226,10 @@ model Order {
   shippedAt             DateTime?
   deliveredAt           DateTime?
   notes                 String? // notas internas (só o admin vê)
+  /// De onde o cliente veio (utm_source, utm_campaign... e IP) — enviado à UTMify
+  tracking              Json?
+  paidAt                DateTime?
+  refundedAt            DateTime?
   currency              String      @default("USD")
   subtotal              Decimal     @db.Decimal(10, 2)
   createdAt             DateTime    @default(now())

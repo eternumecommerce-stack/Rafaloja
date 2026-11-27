@@ -1,5 +1,6 @@
 "use client";
 
+import { readStoredTracking } from "@/lib/tracking";
 import { useState, type FormEvent } from "react";
 import {
   AddressElement,
@@ -86,7 +87,7 @@ export default function CheckoutForm({
       address: address.value.address,
     };
 
-    const res = await createPaymentIntent({ items, email: cleanEmail, shipping, newsletter }).catch(() => ({
+    const res = await createPaymentIntent({ items, email: cleanEmail, shipping, newsletter, tracking: readStoredTracking() }).catch(() => ({
       error: "Something went wrong. Please try again.",
     }));
     if ("error" in res) {
@@ -129,6 +130,7 @@ export default function CheckoutForm({
     }
     const res = await createPaymentIntent({
       items,
+      tracking: readStoredTracking(),
       email: event.billingDetails?.email ?? "",
       shipping: { name: ship.name, phone: event.billingDetails?.phone ?? undefined, address: ship.address },
     }).catch(() => ({ error: "Something went wrong. Please try again." }));

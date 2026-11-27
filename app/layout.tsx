@@ -5,6 +5,7 @@ import "./globals.css";
 import { CartProvider } from "@/components/cart/CartContext";
 import CartDrawer from "@/components/cart/CartDrawer";
 import MetaPixel from "@/components/MetaPixel";
+import UtmCapture from "@/components/UtmCapture";
 import { brand } from "@/lib/store";
 
 const jakarta = Plus_Jakarta_Sans({
@@ -50,6 +51,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Suspense fallback={null}>
           <MetaPixel />
         </Suspense>
+        {/* Guarda as UTMs do anúncio para enviar com o pedido à UTMify */}
+        <UtmCapture />
       </body>
     </html>
   );

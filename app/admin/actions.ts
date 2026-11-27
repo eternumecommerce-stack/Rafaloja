@@ -1,5 +1,7 @@
 "use server";
 
+import { after } from "next/server";
+import { sendOrderToUtmify } from "@/lib/utmify";
 import { updateTag } from "next/cache";
 import { requireAdmin } from "@/lib/admin";
 import { ORDER_STATUSES, STATUS_LABEL, TRACKER_STAGES, type OrderStatusValue } from "@/lib/admin-shared";
@@ -56,6 +58,8 @@ export async function updateOrderStatus(orderId: string, status: OrderStatusValu
         },
       }),
     ]);
+    // UTMify: a venda sai do faturamento do anúncio
+    after(() => sendOrderToUtmify(orderId, "refunded"));
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -92,6 +96,8 @@ export async function updateTracking(orderId: string, trackingNumber: string, ca
         },
       }),
     ]);
+    // UTMify: a venda sai do faturamento do anúncio
+    after(() => sendOrderToUtmify(orderId, "refunded"));
     return { ok: true };
   } catch (e) {
     return fail(e);
@@ -123,7 +129,7 @@ export async function refundOrder(orderId: string): Promise<Result> {
       { idempotencyKey: `refund-${order.id}` },
     );
     await db.$transaction([
-      db.order.update({ where: { id: orderId }, data: { status: "REFUNDED" } }),
+      db.order.update({ where: { id: orderId }, data: { status: "REFUNDED", refundedAt: new Date() } }),
       db.orderEvent.create({
         data: {
           orderId,
@@ -133,6 +139,8 @@ export async function refundOrder(orderId: string): Promise<Result> {
         },
       }),
     ]);
+    // UTMify: a venda sai do faturamento do anúncio
+    after(() => sendOrderToUtmify(orderId, "refunded"));
     return { ok: true };
   } catch (e) {
     return fail(e);
